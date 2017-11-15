@@ -56,15 +56,26 @@ int mm_init(void)
  * mm_malloc - Allocate a block by incrementing the brk pointer.
  *     Always allocate a block whose size is a multiple of the alignment.
  */
+void *increase_heap_size(size_t size){
+	int *heap_end=	((int*) mem_heap_hi()) +1;
+	void *p = mem_sbrk(size);
+	if (*heap_end & 1){ //last block is free
+		heap_end -= *heap_end +1;	//
+		ADD_SIZE(heap_end, size); //modifies the size of block at pos -1 and original_size + new size
+	}
+	return p;
+}
+
 void *mm_malloc(size_t size)
 {
-    int newsize = ALIGN(size + SIZE_T_SIZE);
-    void *p = mem_sbrk(newsize);
+    int newsize = ALIGN(size + SIZE_T_SIZE) + 8; // 8: internal fragmentation to keep track of size
+		    
+		
     if (p == (void *)-1)
-	return NULL;
+			return NULL;
     else {
-        *(size_t *)p = size;
-        return (void *)((char *)p + SIZE_T_SIZE);
+	    *(size_t *)p = size;
+			return (void *)((char *)p + SIZE_T_SIZE);
     }
 }
 
