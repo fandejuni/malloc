@@ -44,11 +44,29 @@ team_t team = {
 
 #define SIZE_T_SIZE (ALIGN(sizeof(size_t)))
 
+#define SIZE_CELL 4
+
+#define NEXT_BLOCK(pointeur) (void *) ((char *) p + (*(((int *) p) - 1)) * SIZE_CELL)
+
+#define PREV_BLOCK(pointeur) (void *) ((char *) p - (*(((int *) p) - 2)) * SIZE_CELL)
+
+#define IS_FREE(pointeur) (*(((int*) pointeur) - 1) & 1)
+
+#define SET_FREE(pointeur) (*(((int*) pointeur) - 1) & 1)
+
+#define SET_OCCUPIED(pointeur) (*(((int*) pointeur) - 1) & 1)
+
+void* current_block;
+
 /* 
  * mm_init - initialize the malloc package.
  */
 int mm_init(void)
 {
+    int* p = mem_sbrk(8);
+    *p = 2;
+    p++;
+    *p = 2;
     return 0;
 }
 
