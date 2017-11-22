@@ -96,26 +96,42 @@ void *mm_malloc(size_t size)
 		int prev_size=0;
 		void* block_0 = current_block;
     int newsize = ALIGN(size + SIZE_T_SIZE) + 8; // 8: internal fragmentation to keep track of size
-		while((char*) current_block + newsize < mem_heap_hi() ){
-			if (IS_FREE(current_block) && SIZE(current_block)> newsize){ // check if block fits
+		while((char*) current_block + newsize < mem_heap_hi() ){ // loop from current to end
+			if (IS_FREE(current_block) && ACTUAL_SIZE(current_block)> newsize){ // check if block fits
 				SET_OCCUPIED(current_block);
-				prev_size= SIZE(current_block);
-				SET_SIZE(current_block,newsize);
-				current_block = (void*) ( ( (char*) current_block) + newsize);
-				SET_SIZE(current_block,prev_size - new_size);
-				break;
+				prev_size= ACTUAL_SIZE(current_block);
+				SET_SIZE(current_block,newsize);													// actualize size of block
+				SET_SIZE(NEXT_BLOCK(current_block),prev_size - new_size); // actualize size of next block
+				return current_block;
 			}
 		current_block = (void*) ( ( (char*) current_block) + newsize);
 		}
-				
 		
-    if (p == (void *)-1)
-			return NULL;
-    else {
-	    *(size_t *)p = size;
-			return (void *)((char *)p + SIZE_T_SIZE);
-    }
+		current_block=mem_heap_lo();
+		while((char*) current_block + newsize < block_0 ){ // loop from begin to block_0
+			if (IS_FREE(current_block) && ACTUAL_SIZE(current_block)> newsize){ // check if block fits
+				SET_OCCUPIED(current_block);
+				prev_size= ACTUAL_SIZE(current_block);
+				SET_SIZE(current_block,newsize);													// actualize size of block
+				SET_SIZE(NEXT_BLOCK(current_block),prev_size - new_size); // actualize size of next block
+				return current_block;
+			}
+		current_block = (void*) ( ( (char*) current_block) + newsize);
+		}
 		
+		// Extend heap, and check if last portion is used or not
+		
+		current_block = mem_heap_hi();
+		if(IS_FREE(current_block)){
+			ADD(current_block, 3- (*current_block)); //go to start of last block
+			increase_heap_size ( newsize - ACTUAL_SIZE(current_block) );
+		}
+		else{
+			ADD(current_block,2);			
+			increase_heap_size (newsize);
+		}
+		SET_OCCUPIED(current_block);		
+		return current_block;
 }
 
 /*
