@@ -106,7 +106,7 @@ void set_occupied(void* pointeur) {
  */
 void *increase_heap_size(size_t size){
 	int *heap_end=	((int*) mem_heap_hi()) +1;
-	void *p = mem_sbrk(size);
+	void *p = mem_sbrk(size*SIZE_CELL);
 	int end_size=0;
 	if (*heap_end & 1){ //last block is free
 		end_size = *heap_end;
@@ -118,14 +118,15 @@ void *increase_heap_size(size_t size){
 
 void *mm_malloc(size_t size)
 {		
+		printf("232 %d %d %d \n" ,current_block, ADD(mem_heap_hi(),-3),INT_POINTER_SIZE_LAST(current_block));	
     printf("0 %d \n", size);
     int prev_size=0;
     void* block_0 = current_block;
     int newsize = ALIGN(size) + 8; // 8: internal fragmentation to keep track of size
 
     printf("1 %d \n", newsize);
-    while(ADD(current_block, newsize) < mem_heap_hi() ){ // loop from current to end
-        printf("20 %d %d \n ", ACTUAL_SIZE(current_block), current_block);
+    while(ADD(current_block, newsize) <= ADD(mem_heap_hi(),-3) ){ // loop from current to end        
+				printf("20 %d %d \n ", ACTUAL_SIZE(current_block), current_block);
         if (IS_FREE(current_block) && ACTUAL_SIZE(current_block)> newsize){ // check if block fits
             printf("3\n");
             prev_size= ACTUAL_SIZE(current_block);
@@ -140,11 +141,14 @@ void *mm_malloc(size_t size)
         }
         printf("5\n");
 		current_block = NEXT_BLOCK(current_block);
+    printf("200 %d %d \n ", ACTUAL_SIZE(current_block), current_block);
     }
 
     current_block=ADD(mem_heap_lo(),8);
+
     while(ADD(current_block, newsize) < block_0 ){ // loop from begin to block_0
-        if (IS_FREE(current_block) && ACTUAL_SIZE(current_block)> newsize){ // check if block fits
+			printf("21 %d %d \n ", ACTUAL_SIZE(current_block), current_block);      
+		  if (IS_FREE(current_block) && ACTUAL_SIZE(current_block)> newsize){ // check if block fits
 
             prev_size= ACTUAL_SIZE(current_block);
             set_size(current_block,newsize);													// actualize size of block
@@ -155,14 +159,14 @@ void *mm_malloc(size_t size)
 
             return current_block;
         }
-        current_block = NEXT_BLOCK(current_block);
+      current_block = NEXT_BLOCK(current_block);
     }
 		
     // Extend heap, and check if last portion is used or not
     
     current_block = ADD(mem_heap_hi(),-3);
-    printf("2 %d \n ", ACTUAL_SIZE(current_block));			
-    if(IS_FREE(current_block)){
+    printf("2 %d %d \n ", *((int*) current_block), current_block);			
+    if((*((int*) current_block)) & 1){
         current_block = ADD(current_block, 3- (* ((int*)current_block)) ); //go to start of last block
         increase_heap_size ( newsize - ACTUAL_SIZE(current_block) );
     }
@@ -170,7 +174,12 @@ void *mm_malloc(size_t size)
         current_block = ADD(current_block,2);			
         increase_heap_size (newsize);
     }
-    set_occupied(current_block);		
+
+		set_size(current_block,newsize);
+    set_occupied(current_block);
+    printf("23 %d \n ", ACTUAL_SIZE(current_block));
+		printf("230 %d \n" , *INT_POINTER_SIZE_LAST(current_block));
+		printf("231 %d %d %d \n" ,current_block, ADD(mem_heap_hi(),-3),INT_POINTER_SIZE_LAST(current_block));	
     return current_block;
 }
 
