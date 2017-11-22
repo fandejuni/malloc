@@ -54,7 +54,7 @@ team_t team = {
 
 #define INT_POINTER_SIZE_LAST(pointeur) (((int *) pointeur) + (ACTUAL_SIZE(pointeur) - 2))
 
-#define NEXT_BLOCK(pointeur) (void *) ((char *) pointeur + (ACTUAL_SIZE(pointeur) * SIZE_CELL)
+#define NEXT_BLOCK(pointeur) ( (void *) ((char *) pointeur + (ACTUAL_SIZE(pointeur) * SIZE_CELL) ))
 
 #define PREV_BLOCK(pointeur) (void *) ((char *) pointeur - (EVENIZE(*(INT_POINTER_SIZE(pointeur) - 1)) * SIZE_CELL))
 
@@ -72,12 +72,14 @@ void* current_block;
  * mm_init - initialize the malloc package.
  */
 int mm_init(void)
-{
+{		
     int* p = mem_sbrk(12);
+
     p++;
-    *p = 2;
+    *p = 3;
     p++;
-    *p = 2;
+    *p = 3;
+		current_block = p;
     return 0;
 }
 
@@ -116,41 +118,55 @@ void *increase_heap_size(size_t size){
 
 void *mm_malloc(size_t size)
 {		
+		printf("0 %d \n", size);
 		int prev_size=0;
 		void* block_0 = current_block;
-    int newsize = ALIGN(size + SIZE_T_SIZE) + 8; // 8: internal fragmentation to keep track of size
-		while((char*) current_block + newsize < mem_heap_hi() ){ // loop from current to end
-			if (IS_FREE(current_block) && ACTUAL_SIZE(current_block)> newsize){ // check if block fits
-				set_occupied(current_block);
+    int newsize = ALIGN(size) + 8; // 8: internal fragmentation to keep track of size
+		printf("1 %d \n", newsize);
+		while(ADD(current_block, newsize) < mem_heap_hi() ){ // loop from current to end
+				printf("20 %d \n ", ACTUAL_SIZE(current_block));			
+		if (IS_FREE(current_block) && ACTUAL_SIZE(current_block)> newsize){ // check if block fits
+				printf("3\n");
 				prev_size= ACTUAL_SIZE(current_block);
 				set_size(current_block,newsize);													// actualize size of block
 				set_size(NEXT_BLOCK(current_block),prev_size - newsize); // actualize size of next block
+
+				set_free(NEXT_BLOCK(current_block));
+				set_occupied(current_block);
+
+				printf("4\n");
 				return current_block;
 			}
-		current_block = (void*) ( ( (char*) current_block) + newsize);
+				printf("5\n");
+		current_block = NEXT_BLOCK(current_block);
 		}
-		
-		current_block=mem_heap_lo();
-		while((char*) current_block + newsize < block_0 ){ // loop from begin to block_0
+
+		current_block=ADD(mem_heap_lo(),8);
+		while(ADD(current_block, newsize) < block_0 ){ // loop from begin to block_0
 			if (IS_FREE(current_block) && ACTUAL_SIZE(current_block)> newsize){ // check if block fits
-				set_occupied(current_block);
+
 				prev_size= ACTUAL_SIZE(current_block);
 				set_size(current_block,newsize);													// actualize size of block
-				set_size(NEXT_BLOCK(current_block),prev_size - new_size); // actualize size of next block
+				set_size(NEXT_BLOCK(current_block),prev_size - newsize); // actualize size of next block
+
+				set_free(NEXT_BLOCK(current_block));
+				set_occupied(current_block);
+
 				return current_block;
 			}
-		current_block = (void*) ( ( (char*) current_block) + newsize);
+			current_block = NEXT_BLOCK(current_block);
 		}
 		
 		// Extend heap, and check if last portion is used or not
 		
-		current_block = mem_heap_hi();
+		current_block = ADD(mem_heap_hi(),-3);
+		printf("2 %d \n ", ACTUAL_SIZE(current_block));			
 		if(IS_FREE(current_block)){
-			ADD(current_block, 3- (*current_block)); //go to start of last block
+			current_block = ADD(current_block, 3- (* ((int*)current_block)) ); //go to start of last block
 			increase_heap_size ( newsize - ACTUAL_SIZE(current_block) );
 		}
 		else{
-			ADD(current_block,2);			
+			current_block = ADD(current_block,2);			
 			increase_heap_size (newsize);
 		}
 		set_occupied(current_block);		
