@@ -52,15 +52,19 @@ team_t team = {
 
 #define ACTUAL_SIZE(pointeur) (EVENIZE(*(INT_POINTER_SIZE(pointeur))))
 
+#define INT_POINTER_SIZE_LAST(pointeur) (((int *) pointeur) + (ACTUAL_SIZE(pointeur) - 2))
+
 #define NEXT_BLOCK(pointeur) (void *) ((char *) p + (ACTUAL_SIZE(pointeur) * SIZE_CELL)
 
 #define PREV_BLOCK(pointeur) (void *) ((char *) p - (EVENIZE(*(INT_POINTER_SIZE(pointeur) - 1)) * SIZE_CELL))
 
 #define IS_FREE(pointeur) (*(INT_POINTER_SIZE(pointeur)) & 1)
 
-#define SET_FREE(pointeur) (INT_POINTER_SIZE(pointeur) >> 1)
+#define OCCUPIED(value) ((value >> 1) << 1)
 
-#define SET_OCCUPIED(pointeur) (*(((int*) pointeur) - 1) & 1)
+#define FREE(value) (OCCUPIED(value) + 1)
+
+#define ADD(pointeur, n) ((void *) (((char *) pointeur) + n))
 
 void* current_block;
 
@@ -75,6 +79,23 @@ int mm_init(void)
     p++;
     *p = 2;
     return 0;
+}
+
+void set_size(void* pointeur, int n) {
+    int* p = INT_POINTER_SIZE(pointeur);
+    p* = n;
+    p = INT_POINTER_SIZE_LAST(pointeur);
+    p* = n;
+}
+
+void set_free(void* pointeur) {
+    int* p = INT_POINTER_SIZE(pointeur);
+    p* = FREE(*p);
+}
+
+void set_occupied(void* pointeur) {
+    int* p = INT_POINTER_SIZE(pointeur);
+    p* = OCCUPIED(*p);
 }
 
 /* 
