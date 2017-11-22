@@ -46,13 +46,19 @@ team_t team = {
 
 #define SIZE_CELL 4
 
-#define NEXT_BLOCK(pointeur) (void *) ((char *) p + (*(((int *) p) - 1)) * SIZE_CELL)
+#define INT_POINTER_SIZE(pointeur) (((int *) pointeur) - 1)
 
-#define PREV_BLOCK(pointeur) (void *) ((char *) p - (*(((int *) p) - 2)) * SIZE_CELL)
+#define EVENIZE(x) ((x >> 1) << 1)
 
-#define IS_FREE(pointeur) (*(((int*) pointeur) - 1) & 1)
+#define ACTUAL_SIZE(pointeur) (EVENIZE(*(INT_POINTER_SIZE(pointeur))))
 
-#define SET_FREE(pointeur) (*(((int*) pointeur) - 1) & 1)
+#define NEXT_BLOCK(pointeur) (void *) ((char *) p + (ACTUAL_SIZE(pointeur) * SIZE_CELL)
+
+#define PREV_BLOCK(pointeur) (void *) ((char *) p - (EVENIZE(*(INT_POINTER_SIZE(pointeur) - 1)) * SIZE_CELL))
+
+#define IS_FREE(pointeur) (*(INT_POINTER_SIZE(pointeur)) & 1)
+
+#define SET_FREE(pointeur) (INT_POINTER_SIZE(pointeur) >> 1)
 
 #define SET_OCCUPIED(pointeur) (*(((int*) pointeur) - 1) & 1)
 
@@ -63,7 +69,8 @@ void* current_block;
  */
 int mm_init(void)
 {
-    int* p = mem_sbrk(8);
+    int* p = mem_sbrk(12);
+    p++;
     *p = 2;
     p++;
     *p = 2;
