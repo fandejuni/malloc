@@ -124,7 +124,7 @@ void *mm_malloc(size_t size)
     int newsize = ALIGN(size) + 8; // 8: internal fragmentation to keep track of size
 		printf("1 %d \n", newsize);
 		while(ADD(current_block, newsize) < mem_heap_hi() ){ // loop from current to end
-				printf("20 %d \n ", ACTUAL_SIZE(current_block));			
+				printf("20 %d %d \n ", ACTUAL_SIZE(current_block), current_block);			
 		if (IS_FREE(current_block) && ACTUAL_SIZE(current_block)> newsize){ // check if block fits
 				printf("3\n");
 				prev_size= ACTUAL_SIZE(current_block);
