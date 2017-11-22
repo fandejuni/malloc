@@ -85,9 +85,22 @@ void *increase_heap_size(size_t size){
 }
 
 void *mm_malloc(size_t size)
-{
+{		
+		int prev_size=0;
+		void* block_0 = current_block;
     int newsize = ALIGN(size + SIZE_T_SIZE) + 8; // 8: internal fragmentation to keep track of size
-		    
+		while((char*) current_block + newsize < mem_heap_hi() ){
+			if (IS_FREE(current_block) && SIZE(current_block)> newsize){ // check if block fits
+				SET_OCCUPIED(current_block);
+				prev_size= SIZE(current_block);
+				SET_SIZE(current_block,newsize);
+				current_block = (void*) ( ( (char*) current_block) + newsize);
+				SET_SIZE(current_block,prev_size - new_size);
+				break;
+			}
+		current_block = (void*) ( ( (char*) current_block) + newsize);
+		}
+				
 		
     if (p == (void *)-1)
 			return NULL;
@@ -95,6 +108,7 @@ void *mm_malloc(size_t size)
 	    *(size_t *)p = size;
 			return (void *)((char *)p + SIZE_T_SIZE);
     }
+		
 }
 
 /*
