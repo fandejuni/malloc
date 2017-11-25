@@ -69,12 +69,15 @@ team_t team = {
 #define FREE(value) (OCCUPIED(value) + 1)
 
 
-#define v0 1
+#define v0 0
 
 #define vl 0
-int v = 1;
+int v = 0;
 
+int brealloc = 0;
+int compt = 0;
 void* current_block;
+int* nullpointer = 0;
 
 /* 
  * mm_init - initialize the malloc package.
@@ -136,6 +139,10 @@ void *increase_heap_size(size_t size){
 
 void *mm_malloc(size_t size)
 {		
+
+	if(v) printf("compteur %d \n", compt);
+	compt++;
+
     if(v) printf("232 %x >=? %x + %d -8 = %x \n" , ADD(mem_heap_hi(),-3),current_block,ACTUAL_SIZE(current_block)*4,INT_POINTER_SIZE_LAST(current_block));	
  	if(v0) printf("0 %d \n", size);
     int prev_size=0;
@@ -218,7 +225,8 @@ void mm_free(void *ptr)
 {
 
  if(v0) printf("free %x %d \n", ptr, ACTUAL_SIZE(ptr));
- if(IS_CORRECT(PREV_BLOCK(ptr)) && IS_FREE(PREV_BLOCK(ptr))){
+ if(brealloc){ 
+	if(IS_CORRECT(PREV_BLOCK(ptr)) && IS_FREE(PREV_BLOCK(ptr))){
 	int prev_size = ACTUAL_SIZE(ptr);
 	if(current_block == ptr) current_block= PREV_BLOCK(ptr);
 	ptr= PREV_BLOCK(ptr); 
@@ -233,6 +241,7 @@ void mm_free(void *ptr)
 	if (v) printf("free plus\n");
  }
  if (v) printf("total_free %d \n", ACTUAL_SIZE(ptr));
+ }
  set_free(ptr);
 
 }
@@ -241,7 +250,7 @@ void mm_free(void *ptr)
  * mm_realloc - Implemented simply in terms of mm_malloc and mm_free
  */
 void *mm_realloc(void *ptr, size_t size)
-{
+{   brealloc =1;
     void *oldptr = ptr;
     void *newptr;
     size_t copySize;
