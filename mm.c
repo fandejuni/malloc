@@ -41,7 +41,6 @@ team_t team = {
 /* rounds up to the nearest multiple of ALIGNMENT */
 #define ALIGN(size) (((size) + (ALIGNMENT-1)) & ~0x7)
 
-
 //#define SIZE_T_SIZE (ALIGN(sizeof(size_t)))
 
 #define SIZE_CELL 4
@@ -93,6 +92,7 @@ int mm_init(void)
     *p = 3;
 	if(v) printf("low heap 2 %x \n", p);
     current_block = p;
+    mm_check();
     return 0;
 }
 
@@ -137,9 +137,14 @@ void *increase_heap_size(size_t size){
 	return p;
 }
 
+void* first_block() {
+    return current_block=ADD(mem_heap_lo(),8);
+}
+
 void *mm_malloc(size_t size)
 {		
 
+    //mm_check();
 	if(v) printf("compteur %d \n", compt);
 	compt++;
 
@@ -174,7 +179,7 @@ void *mm_malloc(size_t size)
 
     }
  
-    current_block=ADD(mem_heap_lo(),8);
+    current_block=first_block();
 
     if(v)   printf("201 %d %x block 0 %x \n ", ACTUAL_SIZE(current_block), current_block,block_0);
     while(IS_CORRECT(current_block) && ADD(current_block, newsize) < block_0 ){ // loop from begin to block_0
@@ -215,6 +220,9 @@ void *mm_malloc(size_t size)
         if(v)   printf("23 %d \n ", ACTUAL_SIZE(current_block));
 	    if(v)	printf("230 %d \n" , *INT_POINTER_SIZE_LAST(current_block));
 	    if(v)	printf("231 %x %x %x \n" ,current_block, ADD(mem_heap_hi(),-3),INT_POINTER_SIZE_LAST(current_block));	
+
+    //mm_check();
+
     return current_block;
 }
 
@@ -223,6 +231,9 @@ void *mm_malloc(size_t size)
 */
 void mm_free(void *ptr)
 {
+ if (v) printf("BEFORE mm_free: occupied %d, free %d\n", sum_occupied(), sum_free());
+
+ //mm_check();
 
  if(v0) printf("free %x %d \n", ptr, ACTUAL_SIZE(ptr));
  if(brealloc){ 
@@ -243,6 +254,9 @@ void mm_free(void *ptr)
  if (v) printf("total_free %d \n", ACTUAL_SIZE(ptr));
  }
  set_free(ptr);
+ if (v) printf(" AFTER mm_free: occupied %d, free %d\n\n", sum_occupied(), sum_free());
+
+ //mm_check();
 
 }
 
@@ -250,7 +264,11 @@ void mm_free(void *ptr)
  * mm_realloc - Implemented simply in terms of mm_malloc and mm_free
  */
 void *mm_realloc(void *ptr, size_t size)
-{   brealloc =1;
+{
+
+    mm_check();
+
+    brealloc =1;
     void *oldptr = ptr;
     void *newptr;
     size_t copySize;
@@ -263,5 +281,50 @@ void *mm_realloc(void *ptr, size_t size)
       copySize = size;
     memcpy(newptr, oldptr, copySize);
     mm_free(oldptr);
+
+    mm_check();
+
     return newptr;
+}
+
+int sum_free() {
+    void* ptr = first_block();
+    int s = 0;
+    while (IS_CORRECT(ptr)) {
+        if (IS_FREE(ptr)) s += ACTUAL_SIZE(ptr);
+        ptr = NEXT_BLOCK(ptr);
+    }
+    return s;
+}
+
+int sum_occupied() {
+    void* ptr = first_block();
+    int s = 0;
+    while (IS_CORRECT(ptr)) {
+        if (!IS_FREE(ptr)) s += ACTUAL_SIZE(ptr);
+        ptr = NEXT_BLOCK(ptr);
+    }
+    return s;
+}
+
+int mm_check() {
+    int ok = 1;
+    int size_debut = 0;
+    int size_fin = 0;
+    int is_free = 0;
+    int current_n_free = 0;
+    if (ok) {
+        int* ptr = first_block();
+        while (IS_CORRECT(ptr)) {
+            size_debut = *(ptr - 1);
+            is_free = IS_FREE(ptr);
+            size_fin = *(((int *) ptr) + EVENIZE(size_debut) - 2);
+            if (is_free) current_n_free++;
+            else current_n_free = 0;
+            if (current_n_free > 1) printf("ERROR: badly coalesced !");
+            if (size_debut != size_fin) printf("ERROR: structure not coherent!");
+            ptr = NEXT_BLOCK(ptr);
+        }
+    }
+    return 1;
 }
