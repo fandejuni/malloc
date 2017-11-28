@@ -231,30 +231,31 @@ void *mm_malloc(size_t size)
 */
 void mm_free(void *ptr)
 {
- if (v) printf("BEFORE mm_free: occupied %d, free %d\n", sum_occupied(), sum_free());
+    if (v) printf("BEFORE mm_free: occupied %d, free %d\n", sum_occupied(), sum_free());
 
- //mm_check();
+    // CHELOU
+    //int* potr = first_block();
+    first_block();
+    //ADD(mem_heap_lo(),8);
 
- if(v0) printf("free %x %d \n", ptr, ACTUAL_SIZE(ptr));
- if(brealloc){ 
-	if(IS_CORRECT(PREV_BLOCK(ptr)) && IS_FREE(PREV_BLOCK(ptr))){
-	int prev_size = ACTUAL_SIZE(ptr);
-	if(current_block == ptr) current_block= PREV_BLOCK(ptr);
-	ptr= PREV_BLOCK(ptr); 
-	
-	set_size(ptr, ACTUAL_SIZE(ptr)+prev_size);
-	if (v) printf("free minus\n");
- }
- if(IS_CORRECT(NEXT_BLOCK(ptr)) && IS_FREE(NEXT_BLOCK(ptr))){
-	int next_size = ACTUAL_SIZE(NEXT_BLOCK(ptr));
- 	if(v0) printf("free2 %x %d \n", ptr, ACTUAL_SIZE(ptr));
-	set_size(ptr, ACTUAL_SIZE(ptr)+next_size);
-	if (v) printf("free plus\n");
- }
- if (v) printf("total_free %d \n", ACTUAL_SIZE(ptr));
- }
- set_free(ptr);
- if (v) printf(" AFTER mm_free: occupied %d, free %d\n\n", sum_occupied(), sum_free());
+    if(v0) printf("free %x %d \n", ptr, ACTUAL_SIZE(ptr));
+    if(IS_CORRECT(PREV_BLOCK(ptr)) && IS_FREE(PREV_BLOCK(ptr))){
+        int prev_size = ACTUAL_SIZE(ptr);
+        if(current_block == ptr) current_block= PREV_BLOCK(ptr);
+
+        ptr= PREV_BLOCK(ptr); 
+        set_size(ptr, ACTUAL_SIZE(ptr)+prev_size);
+        if (v) printf("free minus\n");
+    }
+    if(IS_CORRECT(NEXT_BLOCK(ptr)) && IS_FREE(NEXT_BLOCK(ptr))){
+        int next_size = ACTUAL_SIZE(NEXT_BLOCK(ptr));
+        if(v0) printf("free2 %x %d \n", ptr, ACTUAL_SIZE(ptr));
+        set_size(ptr, ACTUAL_SIZE(ptr)+next_size);
+        if (v) printf("free plus\n");
+    }
+    if (v) printf("total_free %d \n", ACTUAL_SIZE(ptr));
+    set_free(ptr);
+    if (v) printf(" AFTER mm_free: occupied %d, free %d\n\n", sum_occupied(), sum_free());
 
  //mm_check();
 
@@ -266,7 +267,7 @@ void mm_free(void *ptr)
 void *mm_realloc(void *ptr, size_t size)
 {
 
-    mm_check();
+    //mm_check();
 
     brealloc =1;
     void *oldptr = ptr;
@@ -282,7 +283,7 @@ void *mm_realloc(void *ptr, size_t size)
     memcpy(newptr, oldptr, copySize);
     mm_free(oldptr);
 
-    mm_check();
+    //mm_check();
 
     return newptr;
 }
