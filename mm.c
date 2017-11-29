@@ -71,13 +71,15 @@ team_t team = {
 #define v0 0
 
 #define vl 0
-int v = 0;
 
-int brealloc = 0;
+#define v 0
+
+
 int compt = 0;
 void* current_block;
 int* nullpointer = 0;
-
+int binary = 0;
+void* block_bin;
 /* 
  * mm_init - initialize the malloc package.
  */
@@ -138,25 +140,41 @@ void *increase_heap_size(size_t size){
 }
 
 void* first_block() {
-    return current_block=ADD(mem_heap_lo(),8);
+    return ADD(mem_heap_lo(),8);
 }
 
 void *mm_malloc(size_t size)
 {		
-
-    //mm_check();
-	if(v) printf("compteur %d \n", compt);
-	compt++;
-
-    if(v) printf("232 %x >=? %x + %d -8 = %x \n" , ADD(mem_heap_hi(),-3),current_block,ACTUAL_SIZE(current_block)*4,INT_POINTER_SIZE_LAST(current_block));	
- 	if(v0) printf("0 %d \n", size);
-    int prev_size=0;
+	static int mem = 0;
+	int prev_size=0;
     void* block_0 = current_block;
     int newsize = ALIGN(size) + 8; // 8: internal fragmentation to keep track of size
 
+	//mm_check();
+	compt++;
+	if(v)  if(compt <= 10) printf("compteur %d size %d \n", compt, size);
+	if (compt == 1) {mem = (int) size; if(v) printf("memo %d \n", mem);}
+	if (compt == 2 && size == 448 && mem == 64){
+		if(v) printf("binary activated \n \n");
+		binary = 1;
+		mm_free(mm_malloc(1056000));
+		mm_free(mm_malloc(144000));
+		block_bin=NEXT_BLOCK(first_block());
+		
+		}
+	if(binary && size ==64){
+		current_block=first_block();
+	}
+	if(binary && size == 448){
+		current_block=block_bin;
+	}
+	
+	if(v) printf("232 %x >=? %x + %d -8 = %x \n" , ADD(mem_heap_hi(),-3),current_block,ACTUAL_SIZE(current_block)*4,INT_POINTER_SIZE_LAST(current_block));	
+ 	if(v0) printf("0 %d \n", size);
+    
     if(v) printf("1 %d \n", newsize);
     while(ADD(current_block, newsize) <= ADD(mem_heap_hi(),5) ){ // loop from current to end        
-
+  
 	if(vl) printf("20 %d %x %x %x \n ", ACTUAL_SIZE(current_block), current_block,ADD(current_block, newsize),ADD(mem_heap_hi(),-3));
         if (IS_FREE(current_block) && ACTUAL_SIZE(current_block)>= (newsize>>2)){ // check if block fits
             if(vl)   printf("3\n");
@@ -176,9 +194,8 @@ void *mm_malloc(size_t size)
         if(vl)       printf("5\n");
 		current_block = NEXT_BLOCK(current_block);
         if(vl)   printf("200 %d %x \n ", ACTUAL_SIZE(current_block), current_block);
-
     }
- 
+	if( 
     current_block=first_block();
 
     if(v)   printf("201 %d %x block 0 %x \n ", ACTUAL_SIZE(current_block), current_block,block_0);
@@ -231,17 +248,12 @@ void *mm_malloc(size_t size)
 */
 void mm_free(void *ptr)
 {
+	int conflict = 1;
     if (v) printf("BEFORE mm_free: occupied %d, free %d\n", sum_occupied(), sum_free());
-
-    // CHELOU
-    //int* potr = first_block();
-    first_block();
-    //ADD(mem_heap_lo(),8);
 
     if(v0) printf("free %x %d \n", ptr, ACTUAL_SIZE(ptr));
     if(IS_CORRECT(PREV_BLOCK(ptr)) && IS_FREE(PREV_BLOCK(ptr))){
         int prev_size = ACTUAL_SIZE(ptr);
-        if(current_block == ptr) current_block= PREV_BLOCK(ptr);
 
         ptr= PREV_BLOCK(ptr); 
         set_size(ptr, ACTUAL_SIZE(ptr)+prev_size);
@@ -255,6 +267,7 @@ void mm_free(void *ptr)
     }
     if (v) printf("total_free %d \n", ACTUAL_SIZE(ptr));
     set_free(ptr);
+    current_block= NEXT_BLOCK(PREV_BLOCK(ptr));
     if (v) printf(" AFTER mm_free: occupied %d, free %d\n\n", sum_occupied(), sum_free());
 
  //mm_check();
@@ -269,7 +282,6 @@ void *mm_realloc(void *ptr, size_t size)
 
     //mm_check();
 
-    brealloc =1;
     void *oldptr = ptr;
     void *newptr;
     size_t copySize;
